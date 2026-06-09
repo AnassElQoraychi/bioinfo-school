@@ -15,27 +15,43 @@ def read_fasta(path):
 
     for line in Path(path).read_text().splitlines():
         line = line.strip()
+
         if line.startswith(">"):
-            if current_name:
+            if current_name is not None:
                 records[current_name] = "".join(current_seq)
+
             current_name = line[1:]
             current_seq = []
         else:
-            current_seq.append(line)
+            if line:
+                current_seq.append(line)
+
+    # dernier record
+    if current_name is not None:
+        records[current_name] = "".join(current_seq)
 
     return records
 
 
 def gc_percent(sequence):
+    if len(sequence) == 0:
+        return 0.0
+
     gc = sequence.count("G") + sequence.count("C")
-    return gc / len(sequence)
+    return (gc / len(sequence)) * 100
 
 
 def main():
-    records = read_fasta("example.fa")
+    # fichier dans le même dossier que le script
+    fasta_path = Path(__file__).parent / "example.fa"
 
-    for name, sequence in records:
-        print(name, len(sequence), gc_percent(sequence))
+    if not fasta_path.exists():
+        raise FileNotFoundError(f"Fichier introuvable : {fasta_path}")
+
+    records = read_fasta(fasta_path)
+
+    for name, sequence in records.items():
+        print(f"{name}\t{len(sequence)}\t{gc_percent(sequence):.2f}%")
 
 
 if __name__ == "__main__":
